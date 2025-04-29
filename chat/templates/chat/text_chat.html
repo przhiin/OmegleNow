@@ -153,6 +153,31 @@
       50% { opacity: 0.6; }
       100% { opacity: 1; }
     }
+
+    /* Mobile responsive styles */
+    @media (max-width: 480px) {
+      .container {
+        width: 90%;
+        padding: 20px;
+      }
+
+      .glitch {
+        font-size: 1.8rem;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+        margin-bottom: 20px;
+      }
+
+      .form-row {
+        flex-direction: column;
+      }
+
+      input, button {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
