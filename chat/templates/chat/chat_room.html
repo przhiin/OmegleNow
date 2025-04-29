@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Omegley Chat</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #f9f9f9;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      color: #222;
+    }
+
+    h2 {
+      margin: 0;
+      padding: 16px;
+      text-align: center;
+      background-color: #fff;
+      border-bottom: 1px solid #ddd;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    h2 span#partnerName {
+      color: #007acc;
+    }
+
+    #chat-box {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background-color: #ffffff;
+    }
+
+    .message-block {
+      display: flex;
+      flex-direction: column;
+      max-width: 70%;
+    }
+
+    .you-block {
+      align-self: flex-end;
+    }
+
+    .stranger-block {
+      align-self: flex-start;
+    }
+
+    .sender {
+      font-weight: bold;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      font-size: 13px;
+      color: #888;
+    }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 15px;
+      word-wrap: break-word;
+      position: relative;
+      background-color: #e1f3ff;
+      color: #005f99;
+    }
+
+    .you-block .message::before {
+      content: "";
+      position: absolute;
+      left: -8px;
+      top: 12px;
+      width: 4px;
+      height: 24px;
+      background-color: #007acc;
+      border-radius: 2px;
+    }
+
+    .stranger-block .message {
+      background-color: #ffe8e8;
+      color: #c0392b;
+    }
+
+    .stranger-block .message::before {
+      content: "";
+      position: absolute;
+      left: -8px;
+      top: 12px;
+      width: 4px;
+      height: 24px;
+      background-color: #c0392b;
+      border-radius: 2px;
+    }
+
+    .system {
+      align-self: center;
+      background-color: #eee;
+      color: #555;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-style: italic;
+      text-align: center;
+    }
+
+    #input-area {
+      display: flex;
+      padding: 12px;
+      background-color: #fff;
+      border-top: 1px solid #ddd;
+      gap: 10px;
+      justify-content: space-between;
+    }
+
+    #message {
+      flex: 1;
+      padding: 10px 14px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      outline: none;
+    }
+
+    #sendBtn, #skipBtn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      color: #fff;
+      background-color: #007acc;
+      transition: background-color 0.2s ease-in-out;
+    }
+
+    #sendBtn:hover, #skipBtn:hover {
+      background-color: #005f99;
+      
+    }
+
+    #reconnectBtn {
+      margin-top: 12px;
+      padding: 10px 16px;
+      font-size: 14px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #reconnectBtn:hover {
+      background-color: #218838;
+    }
+
+    @media (max-width: 600px) {
+      #message { font-size: 14px; }
+      #sendBtn, #skipBtn { font-size: 13px; padding: 8px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <h2>You're chatting with <span id="partnerName">a stranger</span></h2>
+  <div id="chat-box"></div>
+  <div id="input-area">
+    <button id="skipBtn">Skip</button>
+    <input type="text" id="message" placeholder="Type something..." autofocus>
+    <button id="sendBtn">SEND
+      <i class="fa fa-paper-plane"></i>
+    </button>
+  </div>
+  <script>
+    let roomId = "{{ room_id|default:''|escapejs }}";
+    if (!roomId) {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      roomId = parts[1];
+    }
+
+    const userName = new URLSearchParams(window.location.search).get("user_id");
+    const partnerName = new URLSearchParams(window.location.search).get("partner_name");
+    document.getElementById("partnerName").textContent = partnerName || "a stranger";
+
+    const chatBox = document.getElementById("chat-box");
+    const messageInput = document.getElementById("message");
+    const skipBtn = document.getElementById("skipBtn");
+    let loadInterval;
+
+    function loadMessages() {
+      fetch(`/get_messages/${roomId}/?user=${userName}`)
+        .then(res => res.json())
+        .then(data => {
+          chatBox.innerHTML = "";
+
+          if (data.skipped_by_partner) {
+            const msg = document.createElement("div");
+            msg.className = "message system";
+            msg.innerHTML = `<strong>Your partner skipped you.</strong>`;
+            chatBox.appendChild(msg);
+
+            const startBtn = document.createElement("button");
+            startBtn.id = "reconnectBtn";
+            startBtn.textContent = "Start New Chat";
+            startBtn.style.marginTop = "10px";
+            startBtn.onclick = () => {
+              chatBox.innerHTML = '<p style="text-align:center;">Searching for a new partner...</p>';
+              fetch('/find_match/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: userName })
+              })
+              .then(r => r.json())
+              .then(data => {
+                if (data.status === 'connected') {
+                  window.location.href = `/chat/${data.chat_room}/?user_id=${encodeURIComponent(userName)}&partner_name=${encodeURIComponent(data.partner_name)}`;
+                } else {
+                  chatBox.innerHTML = '<p style="text-align:center;">Waiting for a partner...</p>';
+                  const poll = setInterval(() => {
+                    fetch('/find_match/', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ name: userName })
+                    })
+                    .then(r2 => r2.json())
+                    .then(d2 => {
+                      if (d2.status === 'connected') {
+                        clearInterval(poll);
+                        window.location.href = `/chat/${d2.chat_room}/?user_id=${encodeURIComponent(userName)}&partner_name=${encodeURIComponent(d2.partner_name)}`;
+                      }
+                    });
+                  }, 2000);
+                }
+              });
+            };
+            chatBox.appendChild(startBtn);
+
+            document.getElementById("input-area").style.display = "none";
+            clearInterval(loadInterval);
+            return;
+          }
+
+          data.messages.forEach(msg => {
+            const block = document.createElement("div");
+            const senderName = document.createElement("div");
+            const messageText = document.createElement("div");
+
+            const isYou = msg.user === userName;
+
+            block.className = "message-block " + (isYou ? "you-block" : "stranger-block");
+            senderName.className = "sender";
+            senderName.textContent = isYou ? "YOU" : "STRANGER";
+
+            messageText.className = "message";
+            messageText.textContent = msg.text;
+
+            block.appendChild(senderName);
+            block.appendChild(messageText);
+            chatBox.appendChild(block);
+          });
+
+          chatBox.scrollTop = chatBox.scrollHeight;
+        })
+        .catch(console.error);
+    }
+
+    function startPolling() {
+      loadMessages();
+      loadInterval = setInterval(loadMessages, 1000);
+    }
+    startPolling();
+
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+      fetch(`/send_message/${roomId}/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user: userName, text })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === "success") {
+          messageInput.value = "";
+          loadMessages();
+        }
+      }).catch(console.error);
+    }
+
+    document.getElementById("sendBtn").addEventListener("click", sendMessage);
+    messageInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    function reconnectUser() {
+      chatBox.innerHTML = '<p style="text-align:center;">Searching for a new partner...</p>';
+      skipBtn.disabled = true;
+      fetch('/find_match/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: userName })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'connected') {
+          window.location.href = `/chat/${data.chat_room}/?user_id=${encodeURIComponent(userName)}&partner_name=${encodeURIComponent(data.partner_name)}`;
+        } else {
+          chatBox.innerHTML = '<p style="text-align:center;">Waiting for a partner...</p>';
+          const poll = setInterval(() => {
+            fetch('/find_match/', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: userName })
+            })
+            .then(r2 => r2.json())
+            .then(d2 => {
+              if (d2.status === 'connected') {
+                clearInterval(poll);
+                window.location.href = `/chat/${d2.chat_room}/?user_id=${encodeURIComponent(userName)}&partner_name=${encodeURIComponent(d2.partner_name)}`;
+              }
+            });
+          }, 2000);
+        }
+      });
+    }
+
+    skipBtn.addEventListener("click", () => {
+      if (skipBtn.textContent === "Skip") {
+        fetch(`/skip/${roomId}/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: userName })
+        }).finally(() => {
+          clearInterval(loadInterval);
+          chatBox.innerHTML = '<p style="text-align:center;">You have disconnected. Click "Start" to find a new partner.</p>';
+          messageInput.disabled = true;
+          skipBtn.textContent = "Start";
+        });
+      } else if (skipBtn.textContent === "Start") {
+        skipBtn.textContent = "Skip";
+        messageInput.disabled = false;
+        reconnectUser();
+      }
+    });
+  </script>
+</body>
+</html>
