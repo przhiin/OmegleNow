@@ -2,17 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.2">
   <title>Omegley Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
-    body {
+    html, body {
       margin: 0;
-      background-color: #f9f9f9;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f9f9f9;
+      color: #222;
+    }
+
+    body {
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      color: #222;
     }
 
     h2 {
@@ -31,8 +36,8 @@
 
     #chat-box {
       flex: 1;
-      padding: 20px;
       overflow-y: auto;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -139,7 +144,6 @@
 
     #sendBtn:hover, #skipBtn:hover {
       background-color: #005f99;
-      
     }
 
     #reconnectBtn {
@@ -158,16 +162,14 @@
     }
 
     @media (max-width: 600px) {
-      body { font-size: 14px; }
-      #message { font-size: 14px; width: 100%; }
-      #sendBtn, #skipBtn {
-        font-size: 13px;
-        padding: 8px 10px;
-        flex-shrink: 0;
+      html, body {
+        height: 100vh;
+        overflow: hidden;
       }
-      #input-area {
-        flex-wrap: wrap;
-        gap: 8px;
+      #message { font-size: 14px; }
+      #sendBtn, #skipBtn { font-size: 13px; padding: 8px 12px; }
+      #chat-box {
+        padding: 10px;
       }
     }
   </style>
@@ -178,9 +180,7 @@
   <div id="input-area">
     <button id="skipBtn">Skip</button>
     <input type="text" id="message" placeholder="Type something..." autofocus>
-    <button id="sendBtn">SEND
-      <i class="fa fa-paper-plane"></i>
-    </button>
+    <button id="sendBtn">SEND</button>
   </div>
   <script>
     let roomId = "{{ room_id|default:''|escapejs }}";
@@ -213,7 +213,6 @@
             const startBtn = document.createElement("button");
             startBtn.id = "reconnectBtn";
             startBtn.textContent = "Start New Chat";
-            startBtn.style.marginTop = "10px";
             startBtn.onclick = () => {
               chatBox.innerHTML = '<p style="text-align:center;">Searching for a new partner...</p>';
               fetch('/find_match/', {
