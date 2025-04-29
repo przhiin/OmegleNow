@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Omegley Chat</title>
   <style>
     body {
@@ -157,8 +158,17 @@
     }
 
     @media (max-width: 600px) {
-      #message { font-size: 14px; }
-      #sendBtn, #skipBtn { font-size: 13px; padding: 8px 12px; }
+      body { font-size: 14px; }
+      #message { font-size: 14px; width: 100%; }
+      #sendBtn, #skipBtn {
+        font-size: 13px;
+        padding: 8px 10px;
+        flex-shrink: 0;
+      }
+      #input-area {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
     }
   </style>
 </head>
