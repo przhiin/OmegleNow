@@ -16,6 +16,8 @@
       align-items: center;
       position: relative;
       color: #4A90E2;
+      padding: 20px;
+      text-align: center;
     }
 
     .bubble {
@@ -32,15 +34,17 @@
     }
 
     .container {
-      text-align: center;
       z-index: 2;
+      width: 100%;
+      max-width: 600px;
     }
 
     .glitch {
-      font-size: 4rem;
+      font-size: 3rem;
       color: #4A90E2;
       position: relative;
       animation: flicker 3s infinite;
+      word-break: break-word;
     }
     .glitch::before,
     .glitch::after {
@@ -83,7 +87,7 @@
 
     .subtitle {
       margin-top: 20px;
-      font-size: 1.5rem;
+      font-size: 1.3rem;
       color: #4A90E2;
       animation: slideUp 1.5s ease-out 0.5s forwards;
       opacity: 0;
@@ -97,12 +101,13 @@
       margin-top: 30px;
       display: flex;
       justify-content: center;
+      flex-wrap: wrap;
       gap: 20px;
     }
     .btn {
       position: relative;
       padding: 15px 30px;
-      font-size: 1.1rem;
+      font-size: 1rem;
       color: white;
       background: #4A90E2;
       border: none;
@@ -111,6 +116,7 @@
       overflow: hidden;
       transition: background 0.3s, transform 0.3s;
       backdrop-filter: blur(5px);
+      min-width: 140px;
     }
     .btn:hover { background: #357ABD; transform: scale(1.05); }
     .btn:active { transform: scale(0.95); }
@@ -131,6 +137,15 @@
       left: calc(50% - 50px);
       opacity: 1;
       transform: scale(3);
+    }
+
+    @media (max-width: 480px) {
+      .glitch { font-size: 2rem; }
+      .subtitle { font-size: 1rem; }
+      .btn {
+        padding: 12px 20px;
+        font-size: 0.95rem;
+      }
     }
   </style>
 </head>
