@@ -31,7 +31,7 @@ class VideoChatConsumer(AsyncWebsocketConsumer):
         )
 
 
-    async def signal_message(self, event):
+    async def webrtc_signal(self, event):
         message = event['message']
 
         # Send message to WebSocket
