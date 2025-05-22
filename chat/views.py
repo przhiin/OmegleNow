@@ -18,7 +18,12 @@ video_pending_matches = {}
 
 # Home page with mode selection
 def home(request):
-    return render(request, 'chat/home.html')
+    context = {
+        'active_chat_count': len(active_chats),
+        'waiting_list_count': len(waiting_list),
+        'active_users' : len(waiting_list) + len(active_chats)
+    }
+    return render(request, 'chat/home.html', context)
 
 # Text chat main page
 def text_chat_page(request):
@@ -33,35 +38,39 @@ def video_chat_page(request):
 
 
 
-def perform_matchmaking(user_name):
+def perform_matchmaking(user_id):
+    now = time.time()
     for user in list(waiting_list):
-        if user['name'] != user_name:
+        if user['id'] != user_id:   
             waiting_list.remove(user)
             room_id = str(uuid.uuid4())
-            active_chats[room_id] = [user['name'], user_name]
+            active_chats[room_id] = [user['id'], user_id]
 
             # Remove both users from waiting list
-            waiting_list[:] = [u for u in waiting_list if u['name'] not in [user_name, user['name']]]
+            waiting_list[:] = [u for u in waiting_list if u['id'] not in [user_id, user['id']]]
 
             # Set up pending matches
-            pending_matches[user['name']] = (room_id, user_name)
-            pending_matches[user_name] = (room_id, user['name'])
+            pending_matches[user['id']] = (room_id, user_id)
+            pending_matches[user_id] = (room_id, user['id'])
 
             return {
                 "status": "connected",
                 "chat_room": room_id,
-                "partner_name": user['name']
+                "partner_id": user['id']
             }
 
     # If no match found, put user in waiting list
-    waiting_list[:] = [u for u in waiting_list if u['name'] != user_name]
-    user_id = str(uuid.uuid4())
-    waiting_list.append({'name': user_name, 'id': user_id})
+    waiting_list[:] = [u for u in waiting_list if u['id'] != user_id]
+    if not user_id:
+        user_id = str(uuid.uuid4())
+    
+    if not any(u['id'] == user_id for u in waiting_list):
+        waiting_list.append({'id': user_id})
 
     return {
         "status": "waiting",
         "user_id": user_id
-    }
+    }   
 
 
 
@@ -69,19 +78,54 @@ def perform_matchmaking(user_name):
 def find_match(request):
     if request.method == "POST":
         data = json.loads(request.body)
-        user_name = data.get("name")
+        user_id = data.get("id")
 
         # Check if the user already has a pending match
-        if user_name in pending_matches:
-            room_id, partner_name = pending_matches.pop(user_name)
+        if user_id in pending_matches:
+            room_id, partner_id = pending_matches.pop(user_id)
             return JsonResponse({
                 "status": "connected",
                 "chat_room": room_id,
-                "partner_name": partner_name
+                "partner_id": partner_id
             })
 
-        result = perform_matchmaking(user_name)
+        result = perform_matchmaking(user_id)
         return JsonResponse(result)
+    
+import time
+
+# Track last seen time
+last_active = {}
+
+@csrf_exempt
+def ping(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        user_id = data.get("id")
+        if user_id:
+            last_active[user_id] = time.time()
+            return JsonResponse({"status": "ok"})
+    return JsonResponse({"status": "error"}, status=400)
+
+
+def cleanup_inactive_users():
+    now = time.time()
+    inactive = [uid for uid, ts in last_active.items() if now - ts > 30]
+
+    for user_id in inactive:
+        last_active.pop(user_id, None)
+        # Remove from waiting list
+        waiting_list[:] = [u for u in waiting_list if u['id'] != user_id]
+        # Remove from pending matches
+        pending_matches.pop(user_id, None)
+        # Remove from active chats
+        for room, users in list(active_chats.items()):
+            if user_id in users:
+                active_chats.pop(room)
+                for u in users:
+                    if u != user_id:
+                        skipped_partners[u] = user_id
+
 
 
 # Text chat room view
@@ -93,11 +137,11 @@ def chat_room(request, room_id):
 def get_messages(request, room_id):
     messages = chat_messages.get(room_id, [])
     response = {'messages': messages}
-    user_name = request.GET.get('user')
+    user_id = request.GET.get('user')
 
-    if user_name in skipped_partners:
+    if user_id in skipped_partners:
         response['skipped_by_partner'] = True
-        response['skipped_by'] = skipped_partners.pop(user_name)
+        response['skipped_by'] = skipped_partners.pop(user_id)
 
     return JsonResponse(response)
 
@@ -119,7 +163,7 @@ def send_message(request, room_id):
 def skip_user(request, room_id):
     if request.method == "POST" and room_id in active_chats:
         data = json.loads(request.body)
-        skipper = data.get("name")
+        skipper = data.get("id")
         participants = active_chats.pop(room_id)          # e.g. ['Alice', 'Bob']
 
         # figure out who got skipped
@@ -136,9 +180,8 @@ def skip_user(request, room_id):
         skipped_partners[other] = skipper
 
         # optional: reset or clear chat_messages[room_id]
-        chat_messages[room_id] = [{
-            "user": "system",
-        }]
+        chat_messages.pop(room_id, None)
+
 
         # re-enqueue both, as fresh users
         perform_matchmaking(skipper)
@@ -147,7 +190,7 @@ def skip_user(request, room_id):
         return JsonResponse({
             "status": "skipped",
             "skipped_by": skipper,
-            "partner_name": other
+            "partner_id": other
         })
 
     return JsonResponse({"status": "error", "message": "Invalid room"})
@@ -169,7 +212,6 @@ def skip_user(request, room_id):
 # VIDEO CHAT SECTION STARTS HERE
 # ==============================
 # Find a video call match
-@csrf_exempt
 @csrf_exempt
 def find_video_match(request):
     print("find_video_match called")
