@@ -1,8 +1,10 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Omegle Now</title>
+    <link rel="icon" href="{%static 'chat/images/favicon.ico' %}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
     html, body {
@@ -21,7 +23,7 @@
     }
 
     h2 {
-      margin: 0;
+      margin: 20px 0 0 0;
       padding: 16px;
       text-align: center;
       background-color: #fff;
@@ -30,12 +32,12 @@
       font-weight: 500;
     }
 
-    h2 span#partnerName {
+    h2 span#partnerId {
       color: #007acc;
     }
 
     #chat-box {
-      flex: 0 1 70vh;
+      flex: 1;
       overflow-y: auto;
       padding: 16px;
       display: flex;
@@ -73,7 +75,7 @@
       word-wrap: break-word;
       position: relative;
       background-color: #e1f3ff;
-      color: #005f99;
+      
     }
 
     .you-block .message::before {
@@ -105,11 +107,6 @@
 
     .system {
       align-self: center;
-      background-color: #eee;
-      color: #555;
-      padding: 12px 18px;
-      border-radius: 12px;
-      font-style: italic;
       text-align: center;
     }
 
@@ -160,6 +157,17 @@
     #reconnectBtn:hover {
       background-color: #218838;
     }
+    .omeglnow-banner {
+        position: fixed;
+        top: 20px;  
+        left: 20px;
+        font-size: 3em;
+        font-weight: 900;
+        color: #13417d; /* Dark blue */
+        font-family: 'Brush Script MT', cursive;
+        letter-spacing: 2px;
+        z-index: 1000;
+      }
 
     @media (max-width: 600px) {
       html, body {
@@ -175,7 +183,8 @@
   </style>
 </head>
 <body>
-  <h2>You're chatting with <span id="partnerName">a stranger</span></h2>
+  <div class="omeglnow-banner">Omegle Now</div>
+  <h2>You're talking to a random stranger</h2>
   <div id="chat-box"></div>
   <div id="input-area">
     <button id="skipBtn">Skip</button>
@@ -183,15 +192,16 @@
     <button id="sendBtn">SEND</button>
   </div>
   <script>
+    
     let roomId = "{{ room_id|default:''|escapejs }}";
     if (!roomId) {
       const parts = window.location.pathname.split('/').filter(Boolean);
       roomId = parts[1];
     }
 
-    const userName = new URLSearchParams(window.location.search).get("user_id");
-    const partnerName = new URLSearchParams(window.location.search).get("partner_name");
-    document.getElementById("partnerName").textContent = partnerName || "a stranger";
+    const userId = new URLSearchParams(window.location.search).get("user_id");
+    const partnerId = new URLSearchParams(window.location.search).get("partner_id");
+    //document.getElementById("partnerId").textContent = partnerId || "a stranger";
 
     const chatBox = document.getElementById("chat-box");
     const messageInput = document.getElementById("message");
@@ -199,7 +209,7 @@
     let loadInterval;
 
     function loadMessages() {
-      fetch(`/get_messages/${roomId}/?user=${userName}`)
+      fetch(`/get_messages/${roomId}/?user=${userId}`)
         .then(res => res.json())
         .then(data => {
           chatBox.innerHTML = "";
@@ -207,45 +217,13 @@
           if (data.skipped_by_partner) {
             const msg = document.createElement("div");
             msg.className = "message system";
-            msg.innerHTML = `<strong>Your partner skipped you.</strong>`;
+            msg.innerHTML = "Stranger has disconnected!";
             chatBox.appendChild(msg);
 
-            const startBtn = document.createElement("button");
-            startBtn.id = "reconnectBtn";
-            startBtn.textContent = "Start New Chat";
-            startBtn.onclick = () => {
-              chatBox.innerHTML = '<p style="text-align:center;">Searching for a new partner...</p>';
-              fetch('/find_match/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: userName })
-              })
-              .then(r => r.json())
-              .then(data => {
-                if (data.status === 'connected') {
-                  window.location.href = `/chat/${data.chat_room}/?user_id=${encodeURIComponent(userName)}&partner_name=${encodeURIComponent(data.partner_name)}`;
-                } else {
-                  chatBox.innerHTML = '<p style="text-align:center;">Waiting for a partner...</p>';
-                  const poll = setInterval(() => {
-                    fetch('/find_match/', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ name: userName })
-                    })
-                    .then(r2 => r2.json())
-                    .then(d2 => {
-                      if (d2.status === 'connected') {
-                        clearInterval(poll);
-                        window.location.href = `/chat/${d2.chat_room}/?user_id=${encodeURIComponent(userName)}&partner_name=${encodeURIComponent(d2.partner_name)}`;
-                      }
-                    });
-                  }, 2000);
-                }
-              });
-            };
-            chatBox.appendChild(startBtn);
+            
+            skipBtn.textContent = "Start";
+            messageInput.disabled = true;
 
-            document.getElementById("input-area").style.display = "none";
             clearInterval(loadInterval);
             return;
           }
@@ -255,7 +233,7 @@
             const senderName = document.createElement("div");
             const messageText = document.createElement("div");
 
-            const isYou = msg.user === userName;
+            const isYou = msg.user === userId;
 
             block.className = "message-block " + (isYou ? "you-block" : "stranger-block");
             senderName.className = "sender";
@@ -268,6 +246,14 @@
             block.appendChild(messageText);
             chatBox.appendChild(block);
           });
+
+          // if (!data.partner_active) {
+          //   const warning = document.createElement("div");
+          //   warning.className = "message system";
+          //   warning.textContent = "⚠️ Your partner might have gone offline.";
+          //   chatBox.appendChild(warning);
+          // }
+
 
           chatBox.scrollTop = chatBox.scrollHeight;
         })
@@ -286,7 +272,7 @@
       fetch(`/send_message/${roomId}/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user: userName, text })
+        body: JSON.stringify({ user: userId, text })
       })
       .then(r => r.json())
       .then(data => {
@@ -311,25 +297,25 @@
       fetch('/find_match/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: userName })
+        body: JSON.stringify({ id: userId })
       })
       .then(r => r.json())
       .then(data => {
         if (data.status === 'connected') {
-          window.location.href = `/chat/${data.chat_room}/?user_id=${encodeURIComponent(userName)}&partner_name=${encodeURIComponent(data.partner_name)}`;
+          window.location.href = `/chat/${data.chat_room}/?user_id=${encodeURIComponent(userId)}&partner_id=${encodeURIComponent(data.partner_id)}`;
         } else {
           chatBox.innerHTML = '<p style="text-align:center;">Waiting for a partner...</p>';
           const poll = setInterval(() => {
             fetch('/find_match/', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name: userName })
+              body: JSON.stringify({ id: userId })
             })
             .then(r2 => r2.json())
             .then(d2 => {
               if (d2.status === 'connected') {
                 clearInterval(poll);
-                window.location.href = `/chat/${d2.chat_room}/?user_id=${encodeURIComponent(userName)}&partner_name=${encodeURIComponent(d2.partner_name)}`;
+                window.location.href = `/chat/${d2.chat_room}/?user_id=${encodeURIComponent(userId)}&partner_id=${encodeURIComponent(d2.partner_id)}`;
               }
             });
           }, 2000);
@@ -342,7 +328,7 @@
         fetch(`/skip/${roomId}/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: userName })
+          body: JSON.stringify({ id: userId })
         }).finally(() => {
           clearInterval(loadInterval);
           chatBox.innerHTML = '<p style="text-align:center;">You have disconnected. Click "Start" to find a new partner.</p>';
@@ -355,6 +341,22 @@
         reconnectUser();
       }
     });
+
+    // 🔁 Ping backend every 10 seconds to mark user as active
+    setInterval(() => {
+      fetch("/ping/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: userId })
+        }).then(response => {
+            if (!response.ok) {
+                console.error("Ping failed");
+            }
+        });
+    }, 5000); // 10 seconds
+
+
+
   </script>
 </body>
 </html>
