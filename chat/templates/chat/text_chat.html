@@ -1,9 +1,11 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Omegle Now</title>
+  <link rel="icon" href="{%static 'chat/images/favicon.ico' %}">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; }
@@ -50,7 +52,7 @@
       position: relative;
       color: #4A90E2; /* Glitch text in blue */
       margin-bottom: 20px;
-      animation: zoomInOut 3s infinite ease-in-out;
+      /* animation: zoomInOut 3s infinite ease-in-out; */
     }
 
     @keyframes zoomInOut {
@@ -170,17 +172,66 @@
         margin-bottom: 20px;
       }
 
+    
+
       .form-row {
         flex-direction: column;
+        gap: 5px;
+        
       }
 
       input, button {
         width: 100%;
       }
     }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .gender-row {
+        display: flex;
+        gap: 10px;
+      }
+
+      .start-btn {
+        padding: 12px 24px;
+        font-size: 1rem;
+        border: none;
+        border-radius: 8px;
+        background: #0052A3; /* Darker blue */
+        color: white;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s;
+      }
+
+      .start-btn:hover {
+        background: #003f7d;
+        transform: translateY(-2px);
+      }
+      @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Luckiest+Guy&display=swap');
+
+      .omeglnow-banner {
+        position: fixed;
+        top: 20px;  
+        left: 20px;
+        font-size: 3em;
+        font-weight: 900;
+        color: #13417d; /* Dark blue */
+        font-family: 'Brush Script MT', cursive;
+        letter-spacing: 2px;
+        z-index: 1000;
+      }
+
   </style>
 </head>
 <body>
+  <div class="omeglnow-banner">Omegle Now</div>
+
+</h1>
+
   <script>
     for (let i = 0; i < 20; i++) {
       const bubble = document.createElement('div');
@@ -193,48 +244,81 @@
       document.body.appendChild(bubble);
     }
   </script>
+  <style>
+  .selected {
+    background-color: #4A90E2;
+    color: white;
+    border: 2px solid #4A90E2;
+  }
+</style>
 
   <div class="container">
-    <h1 class="glitch" data-text="Enter Your Name">Enter Your Name</h1>
-    <div class="subtitle">Type your codename to begin</div>
-    <div class="form-row">
-      <input type="text" id="nameInput" placeholder="Your Codename" />
-      <button onclick="startChat()">Start</button>
+    <h1 class="glitch" data-text="Choose Your Gender">Choose Your Gender</h1>
+    <div class="subtitle">Choose Your Gender</div>
+    <div class="form-group">
+      <div class ="form-row gender-row">
+        <button class="gender-btn">Male</button>
+        <button class="gender-btn">Female</button>
+        <button class="gender-btn">Other </button>
+      </div>
+    <button class="start-btn" onclick="startChat()">Start</button>
     </div>
     <div id="status" class="status"></div>
   </div>
-
   <script>
+    const buttons = document.querySelectorAll('.gender-btn');
+    let selectedGender = "";
+    const userId = crypto.randomUUID();
+    const statusText = document.getElementById("status");
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        buttons.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedGender = btn.textContent.trim();
+      });
+    });
+
     function startChat() {
-      const userName = document.getElementById("nameInput").value.trim();
-      const statusText = document.getElementById("status");
-      if (!userName) { alert("Please enter your codename."); return; }
+      if (!selectedGender) {
+        alert("Choose Your Gender");
+        return;
+      }
       statusText.textContent = "Searching for a partner...";
+
       fetch('/find_match/', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: userName })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId, gender: selectedGender })
       })
       .then(res => res.json())
       .then(data => {
         if (data.status === 'connected') {
-          window.location.href = `/chat/${data.chat_room}/?user_id=${encodeURIComponent(userName)}&partner_name=${encodeURIComponent(data.partner_name)}`;
+          window.location.href = `/chat/${data.chat_room}/?user_id=${encodeURIComponent(userId)}&partner_id=${encodeURIComponent(data.partner_id)}`;
         } else {
           statusText.textContent = "Waiting for a partner...";
-          waitForMatch(userName);
+          waitForMatch(userId);
         }
       });
     }
 
-    function waitForMatch(name) {
-      setInterval(() => {
+    function waitForMatch(userId) {
+      const interval = setInterval(() => {
         fetch('/find_match/', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: userId })
         })
         .then(r => r.json())
-        .then(d => { if (d.status === 'connected') window.location.href = `/chat/${d.chat_room}/?user_id=${encodeURIComponent(name)}&partner_name=${encodeURIComponent(d.partner_name)}`; });
+        .then(d => {
+          if (d.status === 'connected') {
+            clearInterval(interval);
+            window.location.href = `/chat/${d.chat_room}/?user_id=${encodeURIComponent(userId)}&partner_id=${encodeURIComponent(d.partner_id)}`;
+          }
+        });
       }, 2000);
     }
-  </script>
+</script>
+
 </body>
 </html>
