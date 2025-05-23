@@ -16,6 +16,19 @@ video_waiting_list = []
 video_active_chats = {}
 video_pending_matches = {}
 
+
+
+
+def terms_view(request):
+    return render(request, 'chat/terms.html')
+
+def contact_view(request):
+    return render(request, 'chat/contact.html')
+
+def privacy_view(request):
+    return render(request, 'chat/privacy.html')
+
+
 # Home page with mode selection
 def home(request):
     context = {
@@ -182,10 +195,6 @@ def skip_user(request, room_id):
         # optional: reset or clear chat_messages[room_id]
         chat_messages.pop(room_id, None)
 
-
-        # re-enqueue both, as fresh users
-        perform_matchmaking(skipper)
-        perform_matchmaking(other)
 
         return JsonResponse({
             "status": "skipped",
