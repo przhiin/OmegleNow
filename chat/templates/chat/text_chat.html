@@ -2,270 +2,160 @@
 {% load static %}
 <html lang="en">
 <head>
+  <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Rubik+Bubbles&display=swap" rel="stylesheet">
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#4A27CC">
   <title>Omegle Now</title>
-  <link rel="icon" href="{%static 'chat/images/favicon.ico' %}">
+  <link rel="icon" href="{% static 'chat/images/favicon.ico' %}">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Vanta.js and Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r121/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; }
-
+    * { box-sizing: border-box; }
+    html { font-family: 'DM Sans', sans-serif; }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #ffffff; /* Pure white background */
-      color: #4A90E2; /* Soft blue text */
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      height: 100vh;
+      margin: 0;
+      font-family: 'DM Sans', sans-serif;
+      color: #eeedf2;
+      font-size: 1vw;
+      line-height: 1.6;
+      font-weight: 400;
+      min-height: 100vh;
+      text-align: center;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0A041F 0%, #150D3F 100%);
     }
 
-    .bubble {
-      position: absolute;
-      bottom: -100px;
-      background-color: rgba(74, 144, 226, 0.1); /* Soft blue bubbles */
-      border-radius: 50%;
-      animation: rise 8s infinite ease-in;
-    }
-    @keyframes rise {
-      0% { transform: translateY(0) scale(0); opacity: 0; }
-      25% { opacity: 1; }
-      100% { transform: translateY(-120vh) scale(1); opacity: 0; }
+    #background {
+      width: 100%;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
     }
 
     .container {
-      position: relative;
-      z-index: 2;
-      background: rgba(255,255,255,0.02);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 16px;
-      padding: 40px;
-      width: 360px;
-      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
     }
 
     .glitch {
-      font-size: 2.5rem;
-      position: relative;
-      color: #4A90E2; /* Glitch text in blue */
+      font-family: 'Rubik Bubbles', cursive;
+      font-size: 4rem;
+      font-weight: 400;
+      color: #fff;
+      text-shadow:
+        0 0 10px rgba(255, 255, 255, 0.2),
+        0 0 40px rgba(92, 49, 255, 0.5),
+        0 0 80px rgba(92, 49, 255, 0.4);
+      animation: bounceGlow 2s ease-in-out infinite alternate;
       margin-bottom: 20px;
-      /* animation: zoomInOut 3s infinite ease-in-out; */
     }
 
-    @keyframes zoomInOut {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-      100% { transform: scale(1); }
-    }
-
-    .glitch::before,
-    .glitch::after {
-      content: attr(data-text);
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      clip: rect(0, 900px, 0, 0);
-    }
-    .glitch::before {
-      animation: glitchTop 2.5s infinite;
-      color: #4A90E2; /* Glitch top color in blue */
-      z-index: -1;
-    }
-    .glitch::after {
-      animation: glitchBottom 3s infinite;
-      color: #80b3ff; /* Lighter blue for glitch bottom */
-      z-index: -2;
-    }
-    @keyframes glitchTop {
-      0%,100% { clip: rect(0,900px,0,0); }
-      10% { clip: rect(0,900px,50px,0); transform: translate(-3px,-3px); }
-      20% { clip: rect(0,900px,0,0); transform: translate(3px,3px); }
-      30% { clip: rect(0,900px,30px,0); transform: translate(-3px,3px); }
-      40% { clip: rect(0,900px,0,0); transform: translate(3px,-3px); }
-    }
-    @keyframes glitchBottom {
-      0%,100% { clip: rect(0,900px,0,0); }
-      10% { clip: rect(50px,900px,100px,0); transform: translate(3px,3px); }
-      20% { clip: rect(0,900px,0,0); transform: translate(-3px,-3px); }
-      30% { clip: rect(25px,900px,75px,0); transform: translate(3px,-3px); }
-      40% { clip: rect(0,900px,0,0); transform: translate(-3px,3px); }
+    @keyframes bounceGlow {
+      0% { transform: scale(1); text-shadow: 0 0 10px rgba(92, 49, 255, 0.2); }
+      100% {
+        transform: scale(1.05);
+        text-shadow:
+          0 0 20px rgba(92, 49, 255, 0.6),
+          0 0 60px rgba(92, 49, 255, 0.3);
+      }
     }
 
     .subtitle {
       font-size: 1.2rem;
-      color: rgba(74, 144, 226, 0.8); /* Soft blue subtitle */
-      margin-bottom: 30px;
-      animation: fadeIn 1.5s ease-out 0.5s forwards;
-      opacity: 0;
+      color: #eeedf2;
+      text-shadow: 0 0 4px rgba(92, 49, 255, 0.2);
+      margin-bottom: 20px;
+      animation: fadeIn 1s ease-out 0.5s forwards;
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .form-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    input {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      background: rgba(74, 144, 226, 0.1); /* Soft blue input background */
-      color: #4A90E2; /* Blue text inside input */
-      font-size: 1rem;
-      outline: none;
-      transition: background 0.3s;
-    }
-    input:focus {
-      background: rgba(74, 144, 226, 0.2); /* Blue focus background */
-    }
-
-    button {
-      padding: 12px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      background: rgba(74, 144, 226, 0.1); /* Soft blue button background */
-      color: #4A90E2; /* Blue text in button */
-      cursor: pointer;
-      transition: background 0.3s, transform 0.2s;
-    }
-    button:hover {
-      background: rgba(74, 144, 226, 0.2); /* Hover effect with soft blue */
-      transform: translateY(-2px);
-    }
-
-    .status {
-      margin-top: 20px;
-      font-style: italic;
-      color: #4A90E2; /* Status in blue */
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.6; }
+      0% { opacity: 0; }
       100% { opacity: 1; }
     }
 
-    /* Mobile responsive styles */
-    @media (max-width: 480px) {
-      .container {
-        width: 90%;
-        padding: 20px;
-      }
-
-      .glitch {
-        font-size: 1.8rem;
-      }
-
-      .subtitle {
-        font-size: 1rem;
-        margin-bottom: 20px;
-      }
-
-    
-
-      .form-row {
-        flex-direction: column;
-        gap: 5px;
-        
-      }
-
-      input, button {
-        width: 100%;
-      }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
     }
-      .form-group {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-      }
 
-      .gender-row {
-        display: flex;
-        gap: 10px;
-      }
+    .gender-row {
+      display: flex;
+      gap: 10px;
+    }
 
-      .start-btn {
-        padding: 12px 24px;
-        font-size: 1rem;
-        border: none;
-        border-radius: 8px;
-        background: #0052A3; /* Darker blue */
-        color: white;
-        cursor: pointer;
-        transition: background 0.3s, transform 0.2s;
-      }
+    .gender-btn, .start-btn {
+      padding: 14px 28px;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #eeedf2;
+      background: rgba(92, 49, 255, 0.2);
+      border: 1px solid rgba(92, 49, 255, 0.4);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(4px);
+    }
 
-      .start-btn:hover {
-        background: #003f7d;
-        transform: translateY(-2px);
-      }
-      @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@700&family=Luckiest+Guy&display=swap');
+    .gender-btn:hover, .start-btn:hover {
+      background: #5C31FF;
+      border-color: #5C31FF;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(92, 49, 255, 0.4);
+    }
 
-      .omeglnow-banner {
-        position: fixed;
-        top: 20px;  
-        left: 20px;
-        font-size: 3em;
-        font-weight: 900;
-        color: #13417d; /* Dark blue */
-        font-family: 'Brush Script MT', cursive;
-        letter-spacing: 2px;
-        z-index: 1000;
-      }
-
+    .selected {
+      background-color: #5C31FF;
+      border: 2px solid #5C31FF;
+      color: white;
+    }
   </style>
 </head>
 <body>
-<!--   <div class="omeglnow-banner">Omegle Now</div> -->
-
-</h1>
-
-  <script>
-    for (let i = 0; i < 20; i++) {
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble';
-      const size = Math.random() * 60 + 20;
-      bubble.style.width = size + 'px';
-      bubble.style.height = size + 'px';
-      bubble.style.left = Math.random() * 100 + 'vw';
-      bubble.style.animationDuration = (Math.random() * 5 + 5) + 's';
-      document.body.appendChild(bubble);
-    }
-  </script>
-  <style>
-  .selected {
-    background-color: #4A90E2;
-    color: white;
-    border: 2px solid #4A90E2;
-  }
-</style>
-
+  <div id="background"></div>
   <div class="container">
     <h1 class="glitch" data-text="Choose Your Gender">Choose Your Gender</h1>
     <div class="subtitle">Choose Your Gender</div>
     <div class="form-group">
-      <div class ="form-row gender-row">
+      <div class="gender-row">
         <button class="gender-btn">Male</button>
         <button class="gender-btn">Female</button>
-        <button class="gender-btn">Other </button>
+        <button class="gender-btn">Other</button>
       </div>
-    <button class="start-btn" onclick="startChat()">Start</button>
+      <button class="start-btn" onclick="startChat()">Start</button>
     </div>
-    <div id="status" class="status"></div>
+    <div id="status" class="subtitle"></div>
   </div>
+
   <script>
+    VANTA.NET({
+      el: "#background",
+      mouseControls: true,
+      touchControls: true,
+      gyroControls: false,
+      minHeight: 200.00,
+      minWidth: 200.00,
+      scale: 1.00,
+      scaleMobile: 1.00,
+      color: 0x5c31ff,
+      backgroundColor: 0x0a041f,
+      points: 12.00,
+      maxDistance: 20.00,
+      spacing: 15.00
+    });
+
     const buttons = document.querySelectorAll('.gender-btn');
     let selectedGender = "";
     const userId = crypto.randomUUID();
@@ -318,7 +208,6 @@
         });
       }, 2000);
     }
-</script>
-
+  </script>
 </body>
 </html>
