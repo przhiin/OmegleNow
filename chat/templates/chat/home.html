@@ -233,13 +233,26 @@
       <div class="subtitle">Select a mode to meet people:</div>
       <div class="buttons">
         <button class="btn" onclick="location.href='/text_chat/'">Text Chat</button>
-        <button class="btn" onclick="location.href='/video_chat/'">Video Chat</button>
+        <button class="btn" onclick="showPopup(this)">Video Chat</button>
+        <div id="popup"
+          style="display:none; position:absolute; background:#FF4081; color:#fff; padding:10px 16px;
+            border-radius:8px; font-size:0.9rem; z-index:1000; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+          🚧 Under Development
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Initialize Vanta.NET background -->
   <script>
+     function showPopup(button) {
+        const popup = document.getElementById("popup");
+        const rect = button.getBoundingClientRect();
+        popup.style.left = rect.left + "px";
+        popup.style.top = rect.bottom + window.scrollY + "px";
+        popup.style.display = "block";
+        setTimeout(() => popup.style.display = "none", 2000);
+      }
     VANTA.NET({
       el: "#background",
       mouseControls: true,
