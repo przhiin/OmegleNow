@@ -5,6 +5,11 @@ from . import consumers
 urlpatterns = [
     # Home and Mode Selection
     path('', views.home, name='home'),
+    path('terms/', views.terms_view, name='terms'),
+    path('contact/', views.contact_view, name='contact'),
+    path('privacy/', views.privacy_view, name='privacy'),
+    
+
 
     # Text Chat Routes
     path('text_chat/', views.text_chat_page, name='text_chat_page'),
