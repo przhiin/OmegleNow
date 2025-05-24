@@ -2,6 +2,15 @@
 {% load static %}
 <html lang="en">
 <head>
+  <meta property="og:title" content="OmegleNow - Meet, Chat & Spend Time With People Online — Anytime, Anywhere">
+  <meta property="og:description" content="OmegleNow lets you connect with strangers instantly via text or video chat. Experience fast, random connections globally.">
+  <meta property="og:image" content="https://www.omeglenow.com/static/chat/images/preview.png">
+  <meta property="og:url" content="https://www.omeglenow.com">
+
+  <meta name="description" content="Chat instantly with random people across the world using OmegleNow – free, anonymous, and fast.">
+  <link rel="icon" href="{% static 'chat/images/favicon.ico' %}">
+
+
   <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Rubik+Bubbles&display=swap" rel="stylesheet">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -233,26 +242,13 @@
       <div class="subtitle">Select a mode to meet people:</div>
       <div class="buttons">
         <button class="btn" onclick="location.href='/text_chat/'">Text Chat</button>
-        <button class="btn" onclick="showPopup(this)">Video Chat</button>
-        <div id="popup"
-          style="display:none; position:absolute; background:#FF4081; color:#fff; padding:10px 16px;
-            border-radius:8px; font-size:0.9rem; z-index:1000; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
-          🚧 Under Development
-        </div>
+        <button class="btn" onclick="location.href='/video_chat/'">Video Chat</button>
       </div>
     </div>
   </div>
 
   <!-- Initialize Vanta.NET background -->
   <script>
-     function showPopup(button) {
-        const popup = document.getElementById("popup");
-        const rect = button.getBoundingClientRect();
-        popup.style.left = rect.left + "px";
-        popup.style.top = rect.bottom + window.scrollY + "px";
-        popup.style.display = "block";
-        setTimeout(() => popup.style.display = "none", 2000);
-      }
     VANTA.NET({
       el: "#background",
       mouseControls: true,
@@ -271,4 +267,3 @@
   </script>
 </body>
 </html>
-
