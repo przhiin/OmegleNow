@@ -174,7 +174,7 @@
 </head>
 <body>
 <!--   <div class="omeglnow-banner">Omegle Now</div> -->
-  <h2>You're talking to a random stranger</h2>
+  <h2>You're connected with <span id="partnerName">Stranger</span></h2>
   <div id="chat-box"></div>
   <div id="input-area">
     <button id="skipBtn">Skip</button>
@@ -182,7 +182,7 @@
     <button id="sendBtn">SEND</button>
   </div>
   <script>
-    
+    const chatStatus = document.getElementById("chatStatus");
     let roomId = "{{ room_id|default:''|escapejs }}";
     if (!roomId) {
       const parts = window.location.pathname.split('/').filter(Boolean);
@@ -213,6 +213,7 @@
             
             skipBtn.textContent = "Start";
             messageInput.disabled = true;
+            chatStatus.style.display = "none";
 
             clearInterval(loadInterval);
             return;
@@ -324,6 +325,7 @@
           chatBox.innerHTML = '<p style="text-align:center;">You have disconnected. Click "Start" to find a new partner.</p>';
           messageInput.disabled = true;
           skipBtn.textContent = "Start";
+          chatStatus.style.display = "none";
         });
       } else if (skipBtn.textContent === "Start") {
         skipBtn.textContent = "Skip";
