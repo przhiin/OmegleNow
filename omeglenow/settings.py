@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-5e^sm3gg$1g#s_)k-9oq+4wf9dvv$1uzg^-z@%wn!roei%18be
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['www.omeglenow.com']
+ALLOWED_HOSTS = []
 
 
 # Application definition
